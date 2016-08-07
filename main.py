@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     wordSearch = WordSerach('word.db')
     wordSearch.startDB()
-    wordSearch.createDB()
+    # wordSearch.createDB()
     line = None
     while True:
         print('< 終了する場合は q を入力してください。 >')
