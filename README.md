@@ -1,20 +1,20 @@
 # search-word
-weblioから単語検索して、登録していく
+weblioから単語検索して、登録していく  
+検索だけとしても利用できる
 
 ## 環境
 * Python3
 
 ## 必要パッケージ
 * lxml
+* cssselect
 * requests
-* sqlite3
+* sqlalchemy
 
 ## 使い方
 ### CUI
 python main.py  
-で実行  
-main.py の 114行目のWordSearch()の引数に'mydb.db'などと入力すれば自分用のデータベース作成  
-例：wordSearch = WordSearch('mydb.db')  
+で実行   
 
 allで登録されている前単語表示
 
