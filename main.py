@@ -1,13 +1,13 @@
 import lxml.html
 import requests
 import re
-import sqlite3
 import pickle
 import io
 import sys
+import DataBase as db
 
 class WordSerach:
-    def __init__(self, db_name=':memory:'):
+    def __init__(self, dbname):
         self.target_url = 'http://www.weblio.jp/content/'
         self.cssselect = '.kiji .NetDicHead, .kiji .NetDicBody'
         self.cssselect += ', .kiji .midashigo, .kiji .Jtnhj'
@@ -16,8 +16,7 @@ class WordSerach:
         self.css.append('.kiji .NetDicHead, .kiji .NetDicBody')
         self.css.append('.kiji .midashigo, .kiji .Jtnhj')
 
-        self.dbname = db_name
-        self.conn = None
+        self.db = db.DataBase(dbname)
 
     def getMean(self, word):
         url = self.target_url + word
@@ -33,87 +32,46 @@ class WordSerach:
             break
         return '@'.join(texts)
 
-    def startDB(self):
-        self.conn = sqlite3.connect(self.dbname)
-
-    def dbCursor(self):
-        if self.conn is None:
-            print('not connect db: {}'.format(self.dbname))
-            exit()
-
-        return self.conn.cursor()
-
-    def createDB(self):
-        c = self.dbCursor()
-
-        sql = 'CREATE TABLE word (id integer primary key autoincrement, word text, mean blob)'
-        c.execute(sql)
-
-        sql = 'CREATE TABLE dual (id integer)'
-        c.execute(sql)
-        sql = 'INSERT INTO dual values (1)'
-        c.execute(sql)
-
-        self.conn.commit()
-        c.close()
-
     def insertDB(self, word):
         mean = self.getMean(word)
         result = re.sub('\s', '', mean)
         result = re.sub('[①-⑳]', '@', result).split('@')
         dump_reuslt = pickle.dumps(result)
 
-        c = self.dbCursor()
-
-        c.execute('INSERT INTO word (word, mean) SELECT :word, :mean from dual '
-                  'WHERE NOT EXISTS (SELECT "X" FROM word WHERE word = :word)',
-                  (word, sqlite3.Binary(dump_reuslt)))
-
-        self.conn.commit()
-        c.close()
+        with self.db.start_session(commit=True) as s:
+            words = db.Words()
+            words.word = word
+            words.mean = dump_reuslt
+            s.add(words)
 
         self.word = word
 
     def deleteWord(self, word=None):
-        c = self.dbCursor()
-
-        if word is None:
-            word = self.word
-
-        c.execute('DELETE FROM word WHERE word = :word',
-                  (word,))
-
-        self.conn.commit()
-        c.close()
+        with self.db.start_session(commit=True) as s:
+            if word is None:
+                word = self.word
+            delete_column = s.query(db.Words).filter_by(word=word).first()
+            s.delete(delete_column)
 
     def readWord(self, word):
-        c = self.dbCursor()
+        with self.db.start_session() as s:
+            data = s.query(db.Words).filter_by(word=word)
+            data = list(data)
+        return pickle.loads(data[0].mean)
 
-        c.execute('SELECT mean from word WHERE word = :word',
-                  (word,))
-
-        data = [pickle.loads(row[0]) for row in c]
-        c.close()
-        return data
 
     def readAllWord(self):
-        c = self.dbCursor()
-
-        c.execute('SELECT word, mean FROM word')
-
-        data = [{'word': row[0], 'mean': pickle.loads(row[1])} for row in c]
-
-        c.close()
-
-        return data
+        with self.db.start_session() as s:
+            datas = s.query(db.Words).all()
+            datas = list(datas)
+            datas = [[data.word, pickle.loads(data.mean)] for data in datas]
+        return  datas
 
 
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, errors='replace')
 
-    wordSearch = WordSerach('word.db')
-    wordSearch.startDB()
-    # wordSearch.createDB()
+    wordSearch = WordSerach('sqlite:///word.db')
     line = None
     while True:
         print('< 終了する場合は q を入力してください。 >')
@@ -134,15 +92,16 @@ if __name__ == '__main__':
                     break
             continue
         elif line == 'all':
-            data = wordSearch.readAllWord()
-            for x in data:
-                print(x['word'])
-                [print(mean) for mean in x['mean']]
-                print('\n')
+            datas = wordSearch.readAllWord()
+            for data in datas:
+                print(data[0])
+                [print(x) for x in data[1]]
+                print('')
             continue
 
         wordSearch.insertDB(line)
-        data = wordSearch.readWord(line)[0]
-        [print(x) for x in data]
+        datas = wordSearch.readWord(line)
+        for data in datas:
+            print(data)
         word = wordSearch.word
         print('\n< [{}] を削除したい場合は、 d を入力してください。 >'.format(word))

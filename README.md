@@ -14,7 +14,10 @@ weblioから単語検索して、登録していく
 ## 使い方
 ### CUI
 python main.py  
-で実行   
+で実行  
+自分のデータベースを作成した場合  
+main.py の74行目のところを好きな名前にかえましょう。  
+例：wordSearch = WordSerach('sqlite:///myword.db')
 
 allで登録されている前単語表示
 
