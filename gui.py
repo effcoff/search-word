@@ -1,5 +1,5 @@
 import tkinter as tk
-from web import *
+from main import *
 
 class EntryFrame(tk.Frame):
     def __init__(self, parent, **kwargs):
