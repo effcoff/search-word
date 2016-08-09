@@ -8,7 +8,7 @@ import DataBase as db
 
 
 class WordSerach:
-    def __init__(self, dbname):
+    def __init__(self, **kwargs):
         self.target_url = 'http://www.weblio.jp/content/'
         self.cssselect = '.kiji .NetDicHead, .kiji .NetDicBody'
         self.cssselect += ', .kiji .midashigo, .kiji .Jtnhj'
@@ -17,7 +17,7 @@ class WordSerach:
         self.css.append('.kiji .NetDicHead, .kiji .NetDicBody')
         self.css.append('.kiji .midashigo, .kiji .Jtnhj')
 
-        self.db = db.DataBase(dbname)
+        self.db = db.DataBase(**kwargs)
 
     def getMean(self, word):
         url = self.target_url + word
