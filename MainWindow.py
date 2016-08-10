@@ -1,114 +1,123 @@
-from kivy.app import App
-from kivy.config import Config
-from kivy.core.text import LabelBase, DEFAULT_FONT
-from kivy.lang import Builder
-from kivy.uix.widget import Widget
+from PyQt5.QtWidgets import *
+from PyQt5 import QtGui
+from PyQt5 import QtCore
 
 from WordSearch import WordSerach
 
-Config.set('graphics', 'width', '500')
-Config.set('graphics', 'height', '600')
-Config.set('graphics', 'resizable', 0)
+class MainTitle(QLabel):
+    def __init__(self, parent, title):
+        super().__init__(parent)
 
-LabelBase.register(DEFAULT_FONT, "font.ttf")
+        self.setText(title)
+        main_font = QtGui.QFont('test', 40, QtGui.QFont.Bold)
+        self.setFont(main_font)
+        self.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
-Builder.load_string(
-'''
-#:kivy 1.9.1
+class MyEntry(QGridLayout):
+    def __init__(self, parent):
+        super().__init__(parent)
 
-<MainWindow>:
-    GridLayout:
-        cols: 1
-        pos: root.pos
-        size: root.size
-        padding: 20
+        self. rows = 0
 
-        Label:
-            text: 'Search Word'
-            font_size: 60
-            text_size: root.size
-            halign: 'center'
-            valign: 'middle'
-            size_hint_y: None
-            height: 100
+    def addEntry(self, text, btn_text, func):
+        rows = self.rows
+        self.addWidget(QLabel(text + ':'), rows, 0)
+        self.inputLine = QLineEdit()
+        self.addWidget(self.inputLine, rows, 1)
+        search_button = QPushButton(btn_text)
+        search_button.clicked.connect(func)
+        self.addWidget(search_button, rows, 2)
 
-        GridLayout:
-            cols: 3
-            size_hint_y: 1
-            spacing: 5
-            size_hint_y: None
-            height: 50
-            spacing: 5
-            padding: 0,0,0,10
-
-            Label:
-                text: '検索:'
-                font_size: 20
-                size_hint_x: 0.2
-
-            TextInput:
-                id: search_word_input
-                text: ''
-                multiline: False
-                font_size: self.height / 1.5
-
-            Button:
-                text: '検索'
-                font_size: 20
-                size_hint_x: 0.3
-                on_press: root.search_word(search_word_input.text, result_box)
-
-        Label:
-            font_size: 20
-            text_size: self.width, None
-            size_hint_y: None
-            height: self.texture_size[1] + 10
-            halign: 'center'
-            valign: 'middle'
-            text: '----  検索結果  ----'
-
-        ScrollView:
-            Label:
-                id: result_box
-                font_size: 17
-                text_size: self.width - 10, None
-                size_hint_y: None
-                height: self.texture_size[1]
-                valign: 'top'
-                color: 0,0,0,1
-
-                canvas.before:
-                    Color:
-                        rgba: 1,1,1,1
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-
-''')
+        self.rows += 1
 
 
-class MainWindow(Widget):
-    def __init__(self):
-        super().__init__()
+class ResultBox(QScrollArea):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.setWidgetResizable(True)
+
+        self.plainTextEdit = QPlainTextEdit()
+        self.plainTextEdit.setReadOnly(True)
+        self.setWidget(self.plainTextEdit)
+
+    def appendText(self, text):
+        self.plainTextEdit.appendPlainText(text)
+
+class WordList(QTreeView):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.setSortingEnabled(True)
+
+        self.index = 0
+
+    def addModel(self, cols, textes):
+        self.model = QtGui.QStandardItemModel(0, cols)
+
+        if cols != len(textes):
+            print('cols: {}  !=  textes length: {}'.format(cols, len(textes)))
+            exit()
+        else:
+            for col in range(cols):
+                self.model.setHeaderData(col, QtCore.Qt.Horizontal, textes[col])
+
+        self.setModel(self.model)
+
+    def addItem(self, word):
+        item = QtGui.QStandardItem(word)
+        self.model.setItem(self.index, 0, item)
+
+        self.index += 1
+
+
+
+
+
+class MainWindow(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setMinimumSize(400, 500)
+        self.resize(400, 500)
 
         self.ws = WordSerach()
 
-    def search_word(self, value, result_box):
-        self.ws.insertDB(value)
-        mean = self.ws.readWord(value)
-        string = '\n'.join(mean)
-        result_box.text += string + '\n\n'
+
+        main_layout = QVBoxLayout()
+
+        # self.word_list = WordList(None)
+        # self.word_list.addModel(1, ['単語'])
+        # self.word_list.addItem('testasd')
+        #
+        # main_layout.addWidget(self.word_list)
+
+        main_title = MainTitle(None, 'Search Word')
+        main_layout.addWidget(main_title)
+
+        self.entry = MyEntry(None)
+        self.entry.addEntry('検索単語', '検索', self.searchWord)
+
+        main_layout.addLayout(self.entry)
+
+        self.result_box = ResultBox(None)
+
+        main_layout.addWidget(self.result_box)
+
+        self.setLayout(main_layout)
+        self.setWindowTitle('Test')
+
+    def searchWord(self):
+        word = self.entry.inputLine.text()
+        self.ws.insertDB(word)
+        mean = self.ws.readWord(word)
+        mean = '\n'.join(mean)
+        self.result_box.appendText(mean + '\n')
 
 
-if __name__ in ('__main__'):
-    class MainApp(App):
-        title = 'Search Word'
-
-        def __init__(self):
-            super().__init__()
-
-        def build(self):
-            return MainWindow()
-
-
-    MainApp().run()
+if __name__ == '__main__':
+    import sys
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec_())
