@@ -4,6 +4,7 @@ from PyQt5 import QtCore
 
 from WordSearch import WordSerach
 
+
 class MainTitle(QLabel):
     def __init__(self, parent, title):
         super().__init__(parent)
@@ -13,19 +14,21 @@ class MainTitle(QLabel):
         self.setFont(main_font)
         self.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
+
 class MyEntry(QGridLayout):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self. rows = 0
+        self.rows = 0
 
-    def addEntry(self, text, btn_text, func):
+    def addEntry(self, text, btn_text, func=None):
         rows = self.rows
         self.addWidget(QLabel(text + ':'), rows, 0)
         self.inputLine = QLineEdit()
         self.addWidget(self.inputLine, rows, 1)
         search_button = QPushButton(btn_text)
-        search_button.clicked.connect(func)
+        if not func is None:
+            search_button.clicked.connect(func)
         self.addWidget(search_button, rows, 2)
 
         self.rows += 1
@@ -44,11 +47,13 @@ class ResultBox(QScrollArea):
     def appendText(self, text):
         self.plainTextEdit.appendPlainText(text)
 
-class WordList(QTreeView):
+    def setText(self, text):
+        self.plainTextEdit.setPlainText(text)
+
+
+class TreeList(QTreeView):
     def __init__(self, parent):
         super().__init__(parent)
-
-        self.setSortingEnabled(True)
 
         self.index = 0
 
@@ -64,48 +69,88 @@ class WordList(QTreeView):
 
         self.setModel(self.model)
 
-    def addItem(self, word):
-        item = QtGui.QStandardItem(word)
-        self.model.setItem(self.index, 0, item)
+    def addClicked(self, func):
+        self.clicked.connect(func)
+
+    def addItem(self, item):
+        for i, data in enumerate(item):
+            s_item = QtGui.QStandardItem(data)
+            s_item.setEditable(False)
+            self.model.setItem(self.index, i, s_item)
 
         self.index += 1
 
+    def addItems(self, items):
+        pass
+
+import datetime as dt
+
+class History(QVBoxLayout):
+    def __init__(self, parent, ws):
+        super().__init__(parent)
+
+        self.ws = ws
+
+        # history list
+        self.history_list = TreeList(None)
+        self.history_list.addModel(2, ['単語', '日時'])
+        self.history_list.addClicked(self.selectHistory)
+        self.addWidget(self.history_list)
+
+        # result box
+        self.result_box = ResultBox(None)
+        self.addWidget(self.result_box)
+
+        datas = self.ws.readAllWord()
+        items = [[item[0], item[2].strftime('%Y-%m-%d')] for item in datas]
+        self.addItems(items)
+        self.mean = ['\n'.join(data[1]) for data in datas]
 
 
+    def addItems(self, datas):
+        for data in datas:
+            self.history_list.addItem([data[0], data[1]])
+
+
+    def selectHistory(self, q_model):
+        index = q_model.row()
+        mean = self.mean[index]
+        print(mean)
+        self.result_box.setText(mean + '\n')
 
 
 class MainWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setMinimumSize(400, 500)
-        self.resize(400, 500)
+        self.setMinimumSize(600, 500)
+        self.resize(600, 500)
+        self.setWindowTitle('Test')
 
         self.ws = WordSerach()
 
+        main_h_layout = QHBoxLayout()
+        self.setLayout(main_h_layout)
+
+        # histoy layout
+        self.history_panel = History(None, self.ws)
+        main_h_layout.addLayout(self.history_panel)
 
         main_layout = QVBoxLayout()
+        main_h_layout.addLayout(main_layout)
 
-        # self.word_list = WordList(None)
-        # self.word_list.addModel(1, ['単語'])
-        # self.word_list.addItem('testasd')
-        #
-        # main_layout.addWidget(self.word_list)
-
+        # main title
         main_title = MainTitle(None, 'Search Word')
         main_layout.addWidget(main_title)
 
+        # search word entry
         self.entry = MyEntry(None)
         self.entry.addEntry('検索単語', '検索', self.searchWord)
-
         main_layout.addLayout(self.entry)
 
+        # reuslt box
         self.result_box = ResultBox(None)
-
         main_layout.addWidget(self.result_box)
-
-        self.setLayout(main_layout)
-        self.setWindowTitle('Test')
 
     def searchWord(self):
         word = self.entry.inputLine.text()
@@ -114,9 +159,12 @@ class MainWindow(QWidget):
         mean = '\n'.join(mean)
         self.result_box.appendText(mean + '\n')
 
+        self.history_panel.history_list.addItem([word, word])
+
 
 if __name__ == '__main__':
     import sys
+
     app = QApplication(sys.argv)
     main_window = MainWindow()
     main_window.show()

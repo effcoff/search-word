@@ -1,3 +1,4 @@
+import datetime as dt
 import pickle
 import re
 
@@ -41,9 +42,14 @@ class WordSerach:
 
         with self.db.start_session(commit=True) as s:
             words = db.Words()
-            words.word = word
-            words.mean = dump_reuslt
-            s.add(words)
+            data = s.query(db.Words).filter_by(word=word).first()
+            if not data is None:
+                if word == data.word:
+                    data.updated_time = dt.datetime.now()
+            else:
+                words.word = word
+                words.mean = dump_reuslt
+                s.add(words)
 
         self.word = word
 
@@ -56,14 +62,12 @@ class WordSerach:
 
     def readWord(self, word):
         with self.db.start_session() as s:
-            data = s.query(db.Words).filter_by(word=word)
-            data = list(data)
-        return pickle.loads(data[0].mean)
-
+            data = s.query(db.Words).filter_by(word=word).first()
+        return pickle.loads(data.mean)
 
     def readAllWord(self):
         with self.db.start_session() as s:
             datas = s.query(db.Words).all()
             datas = list(datas)
-            datas = [[data.word, pickle.loads(data.mean)] for data in datas]
-        return  datas
+            datas = [[data.word, pickle.loads(data.mean), data.created_time, data.updated_time] for data in datas]
+        return datas

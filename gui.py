@@ -1,14 +1,10 @@
+from PyQt5.QtWidgets import QApplication
 from MainWindow import MainWindow
-from kivy.app import App
 
-class MainApp(App):
-    title = 'Search Word'
+if __name__ == '__main__':
+    import sys
 
-    def __init__(self):
-        super().__init__()
-
-    def build(self):
-        return MainWindow()
-
-if __name__ in ('__main__'):
-    MainApp().run()
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec_())

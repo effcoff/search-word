@@ -14,9 +14,8 @@ weblioから単語検索して、登録していく
 
 ### GUIの場合
 pip installしましょ  
-* cython
-* pygame
-* kivy
+* pyqt5
+
 
 ## 使い方
 ### CUI
@@ -29,6 +28,7 @@ main.py の74行目のところを好きな名前にかえましょう。
 allで登録されている前単語表示
 
 ### GUI
+  python gui.pyで実行
   まだ未完成
 
 ## 追加予定
