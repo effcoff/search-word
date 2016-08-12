@@ -1,8 +1,10 @@
+import datetime as dt
+from contextlib import contextmanager
+
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import reconstructor, sessionmaker
-from contextlib import contextmanager
-import datetime as dt
+
 
 class DataBase:
     Base = declarative_base()
@@ -29,6 +31,7 @@ class DataBase:
             if session is not None:
                 session.close()
 
+
 if __name__ == '__main__':
     class Words(DataBase.Base):
         __tablename__ = 'words'
@@ -43,27 +46,30 @@ if __name__ == '__main__':
         def initialize(self):
             pass
 
+
     db = DataBase(echo=False)
+
 
     def print_words(word):
         print('{}   {}  {}  {}'.format(word.word, word.mean,
                                        word.created_time, word.updated_time))
 
+
     with db.start_session(commit=True) as session:
         word = Words()
         word.word = 'Test'
-        word.mean =  'data'
+        word.mean = 'data'
         session.add(word)
 
     with db.start_session(commit=True) as session:
         word = Words()
         word.word = 'aaaa'
-        word.mean =  'data'
+        word.mean = 'data'
         session.add(word)
 
     with db.start_session(commit=True) as session:
         words = session.query(Words).filter_by(word='Test').first()
-        words.mean =  'lkjsdf'
+        words.mean = 'lkjsdf'
 
     with db.start_session() as session:
         words = session.query(Words).order_by(sa.desc(Words.created_time)).all()

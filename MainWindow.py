@@ -163,8 +163,6 @@ class MainWindow(QWidget):
         mean = self.ws.getWord(word)['mean']
         self.result_box.appendText(mean + '\n')
 
-        self.history_panel.history_list.addItem([word, word])
-
         self.history_panel.initHistory()
 
 

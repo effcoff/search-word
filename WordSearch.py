@@ -18,6 +18,8 @@ class WordSerach:
 
         self.db = db.DataBase(**kwargs)
         self.word_db = db.WordsDB()
+        self.history_datas = []
+        self.getHistory()
 
     def getMean(self, word):
         url = self.target_url + word
@@ -39,9 +41,19 @@ class WordSerach:
 
         return mean
 
+    def addHistory(self, data):
+        tmp_data = [data]
+        if len(self.history_datas) >= 1:
+            print('aaa')
+            self.history_datas = [h for h in self.history_datas if h['word'] != tmp_data[0]['word']]
+            tmp_data.extend(self.history_datas)
+
+        self.history_datas = tmp_data
+
     def insertDB(self, word):
         mean = self.getMean(word)
-        self.word_db.insert(word, mean)
+        data = self.word_db.insert(word, mean)
+        self.addHistory(data)
 
         self.word = word
 
@@ -72,20 +84,25 @@ class WordSerach:
         return res
 
     def getHistory(self, count=None):
-        res = self.word_db.selectAllWithUpdated()
+        if len(self.history_datas) <= 0:
+            res = self.word_db.selectAllOrderByUpdatedDesc()
 
-        if res is None:
-            print('履歴が一つも登録されていません。')
-            return None
+            if res is None:
+                print('履歴が一つも登録されていません。')
+                return None
 
-        return res
+            self.history_datas = res
+        return self.history_datas
 
 
 if __name__ == '__main__':
     ws = WordSerach()
 
+    print(ws.getHistory())
     ws.getMean('逡巡')
-    ws.deleteWord('逡巡')
     ws.insertDB('逡巡')
+    ws.insertDB('神妙')
+    ws.insertDB('逡巡')
+    print(len(ws.getHistory()))
     ws.deleteWord('逡巡')
     print(ws.getWord('逡巡'))

@@ -1,4 +1,5 @@
 import datetime as dt
+from datetime import datetime
 
 import sqlalchemy as sa
 from sqlalchemy.orm import reconstructor
@@ -20,15 +21,13 @@ class Words(DataBase.Base):
         pass
 
 
-from datetime import datetime
-
-
 class WordsDB(DataBase):
     def insert(self, word, mean):
         with self.start_session(commit=True) as s:
+            # 既に単語が登録されていたら、更新日時を更新して終了
             res = self.updateTimeWithWord(word)
-            if res is True:
-                return None
+            if not res is False:
+                return res
 
             new_data = Words()
             new_data.word = word
@@ -37,12 +36,22 @@ class WordsDB(DataBase):
             new_data.updated_time = datetime.now()
 
             s.add(new_data)
+            return self.createDic(new_data.word,
+                                  new_data.mean,
+                                  new_data.created_time,
+                                  new_data.updated_time)
 
-    def createWord(self, data):
-        return {'word': data.word,
-                'mean': data.mean,
-                'created_time': data.created_time,
-                'updated_time': data.updated_time}
+    def createDic(self, word, mean, created_time, updated_time):
+        return {'word': word,
+                'mean': mean,
+                'created_time': created_time,
+                'updated_time': updated_time}
+
+    def createWordDic(self, data):
+        return self.createDic(data.word,
+                              data.mean,
+                              data.created_time,
+                              data.updated_time)
 
     def deleteWord(self, word):
         with self.start_session(commit=True) as s:
@@ -59,17 +68,17 @@ class WordsDB(DataBase):
             if len(words) <= 0:
                 return None
 
-            datas = [self.createWord(word) for word in words]
-        return datas
+            datas = [self.createWordDic(word) for word in words]
+            return datas
 
-    def selectAllWithUpdated(self):
+    def selectAllOrderByUpdatedDesc(self):
         with self.start_session() as s:
             words = s.query(Words).order_by(sa.desc(Words.updated_time)).all()
             if len(words) <= 0:
                 return None
 
-            datas = [self.createWord(word) for word in words]
-        return datas
+            datas = [self.createWordDic(word) for word in words]
+            return datas
 
     def selectWord(self, word):
         with self.start_session() as s:
@@ -77,7 +86,7 @@ class WordsDB(DataBase):
             if data is None:
                 return None
 
-        return self.createWord(data)
+            return self.createWordDic(data)
 
     def updateTimeWithWord(self, word):
         with self.start_session(commit=True) as s:
@@ -86,7 +95,7 @@ class WordsDB(DataBase):
                 return False
 
             data.updated_time = datetime.now()
-            return True
+            return self.createWordDic(data)
 
 
 if __name__ == '__main__':
