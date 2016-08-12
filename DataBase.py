@@ -29,46 +29,47 @@ class DataBase:
             if session is not None:
                 session.close()
 
-class Words(DataBase.Base):
-    __tablename__ = 'words'
-    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    word = sa.Column(sa.String(length=64), unique=True, nullable=False)
-    mean = sa.Column(sa.Binary, nullable=False)
-    created_time = sa.Column(sa.DateTime, default=dt.datetime.now())
-    updated_time = sa.Column(sa.DateTime, default=dt.datetime.now(),
-                             onupdate=dt.datetime.now())
-
-    @reconstructor
-    def initialize(self):
-        pass
-
 if __name__ == '__main__':
+    class Words(DataBase.Base):
+        __tablename__ = 'words'
+        id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+        word = sa.Column(sa.String(length=64), unique=True, nullable=False)
+        mean = sa.Column(sa.Text, nullable=False)
+        created_time = sa.Column(sa.DateTime, default=dt.datetime.now())
+        updated_time = sa.Column(sa.DateTime, default=dt.datetime.now(),
+                                 onupdate=dt.datetime.now())
+
+        @reconstructor
+        def initialize(self):
+            pass
+
     db = DataBase(echo=False)
+
+    def print_words(word):
+        print('{}   {}  {}  {}'.format(word.word, word.mean,
+                                       word.created_time, word.updated_time))
 
     with db.start_session(commit=True) as session:
         word = Words()
         word.word = 'Test'
-        data = ['data', 'data']
-        import pickle
-        dump = pickle.dumps(data)
-        word.mean =  dump
+        word.mean =  'data'
         session.add(word)
 
     with db.start_session(commit=True) as session:
         word = Words()
         word.word = 'aaaa'
-        data = ['data', 'data']
-        import pickle
-        dump = pickle.dumps(data)
-        word.mean =  dump
+        word.mean =  'data'
         session.add(word)
+
+    with db.start_session(commit=True) as session:
+        words = session.query(Words).filter_by(word='Test').first()
+        words.mean =  'lkjsdf'
 
     with db.start_session() as session:
         words = session.query(Words).order_by(sa.desc(Words.created_time)).all()
-        print(words[0].word)
-        data = pickle.loads(words[0].mean)
-        [print(x) for x in data]
+        for word in words:
+            print_words(word)
 
     with db.start_session() as session:
-        words = session.query(Words).filter_by(word='Test')
-        print(words[0].word)
+        words = session.query(Words).filter_by(word='Test').first()
+        print_words(word)

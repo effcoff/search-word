@@ -102,9 +102,12 @@ class History(QVBoxLayout):
         self.addWidget(self.result_box)
 
         datas = self.ws.readAllWord()
-        items = [[item[0], item[2].strftime('%Y-%m-%d')] for item in datas]
-        self.addItems(items)
-        self.mean = ['\n'.join(data[1]) for data in datas]
+        if not datas is None:
+            self.items = [(item['word'], item['updated_time'].strftime('%Y-%m-%d'),
+                      item['mean']) for item in datas]
+            self.addItems(self.items)
+
+
 
 
     def addItems(self, datas):
@@ -114,7 +117,7 @@ class History(QVBoxLayout):
 
     def selectHistory(self, q_model):
         index = q_model.row()
-        mean = self.mean[index]
+        mean = self.items[index][2]
         print(mean)
         self.result_box.setText(mean + '\n')
 
