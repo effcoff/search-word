@@ -1,5 +1,3 @@
-import datetime as dt
-import pickle
 import re
 
 import lxml.html
@@ -38,7 +36,6 @@ class WordSerach:
         mean = '\n'.join(texts)
         # 複数意味がある場合は、①のように順番になっているので、改行に変更
         mean = re.sub('[①-⑳]', '\n', mean)
-        print(mean)
 
         return mean
 
@@ -56,7 +53,7 @@ class WordSerach:
         if res is False:
             print('{}は、保存されていません。'.format(word))
 
-    def readWord(self, word):
+    def getWord(self, word):
         res = self.word_db.selectWord(word)
 
         if res is None:
@@ -65,11 +62,20 @@ class WordSerach:
 
         return res
 
-    def readAllWord(self):
+    def getAllWord(self):
         res = self.word_db.selectAll()
 
         if res is None:
             print('単語が一つも登録されていません。')
+            return None
+
+        return res
+
+    def getHistory(self, count=None):
+        res = self.word_db.selectAllWithUpdated()
+
+        if res is None:
+            print('履歴が一つも登録されていません。')
             return None
 
         return res
@@ -82,4 +88,4 @@ if __name__ == '__main__':
     ws.deleteWord('逡巡')
     ws.insertDB('逡巡')
     ws.deleteWord('逡巡')
-    print(ws.readWord('逡巡'))
+    print(ws.getWord('逡巡'))

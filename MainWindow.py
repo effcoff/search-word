@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import QtGui
 from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import *
 
 from WordSearch import WordSerach
 
@@ -83,7 +83,6 @@ class TreeList(QTreeView):
     def addItems(self, items):
         pass
 
-import datetime as dt
 
 class History(QVBoxLayout):
     def __init__(self, parent, ws):
@@ -101,24 +100,27 @@ class History(QVBoxLayout):
         self.result_box = ResultBox(None)
         self.addWidget(self.result_box)
 
-        datas = self.ws.readAllWord()
+        self.initHistory()
+
+    def initHistory(self):
+        if not self.history_list.model.hasChildren() is None:
+            count = self.history_list.model.rowCount()
+            self.history_list.model.removeRows(0, count)
+            self.history_list.index = 0
+
+        datas = self.ws.getHistory()
         if not datas is None:
             self.items = [(item['word'], item['updated_time'].strftime('%Y-%m-%d'),
-                      item['mean']) for item in datas]
+                           item['mean']) for item in datas]
             self.addItems(self.items)
-
-
-
 
     def addItems(self, datas):
         for data in datas:
             self.history_list.addItem([data[0], data[1]])
 
-
     def selectHistory(self, q_model):
         index = q_model.row()
         mean = self.items[index][2]
-        print(mean)
         self.result_box.setText(mean + '\n')
 
 
@@ -158,11 +160,12 @@ class MainWindow(QWidget):
     def searchWord(self):
         word = self.entry.inputLine.text()
         self.ws.insertDB(word)
-        mean = self.ws.readWord(word)
-        mean = '\n'.join(mean)
+        mean = self.ws.getWord(word)['mean']
         self.result_box.appendText(mean + '\n')
 
         self.history_panel.history_list.addItem([word, word])
+
+        self.history_panel.initHistory()
 
 
 if __name__ == '__main__':

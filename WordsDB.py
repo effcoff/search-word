@@ -19,11 +19,17 @@ class Words(DataBase.Base):
     def initialize(self):
         pass
 
+
 from datetime import datetime
+
 
 class WordsDB(DataBase):
     def insert(self, word, mean):
         with self.start_session(commit=True) as s:
+            res = self.updateTimeWithWord(word)
+            if res is True:
+                return None
+
             new_data = Words()
             new_data.word = word
             new_data.mean = mean
@@ -49,7 +55,16 @@ class WordsDB(DataBase):
 
     def selectAll(self):
         with self.start_session() as s:
-            words = s.query(Words).all()
+            words = s.query(Words).order_by(Words.id).all()
+            if len(words) <= 0:
+                return None
+
+            datas = [self.createWord(word) for word in words]
+        return datas
+
+    def selectAllWithUpdated(self):
+        with self.start_session() as s:
+            words = s.query(Words).order_by(sa.desc(Words.updated_time)).all()
             if len(words) <= 0:
                 return None
 
@@ -64,11 +79,23 @@ class WordsDB(DataBase):
 
         return self.createWord(data)
 
+    def updateTimeWithWord(self, word):
+        with self.start_session(commit=True) as s:
+            data = s.query(Words).filter_by(word=word).first()
+            if data is None:
+                return False
+
+            data.updated_time = datetime.now()
+            return True
+
 
 if __name__ == '__main__':
     word_db = WordsDB()
     for i in range(10):
-        word_db.insert('word'+str(i), 'test')
+        word_db.insert('word' + str(i), 'test')
+
+    word_db.updateTimeWithWord('word4')
+
     [print(x) for x in word_db.selectAll()]
     print(word_db.selectWord('word'))
     word_db.deleteWord('word')
