@@ -29,13 +29,14 @@ class WordsDB(DataBase):
             if not res is False:
                 return res
 
+            # 新しい単語を登録
             new_data = Words()
             new_data.word = word
             new_data.mean = mean
             new_data.created_time = datetime.now()
             new_data.updated_time = datetime.now()
-
             s.add(new_data)
+
             return self.createDic(new_data.word,
                                   new_data.mean,
                                   new_data.created_time,

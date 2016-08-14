@@ -5,12 +5,14 @@ import requests
 
 import WordsDB as db
 
+from Singleton import Singleton
 
-class WordSerach:
+
+class WordSerach(metaclass=Singleton):
     def __init__(self, **kwargs):
         self.target_url = 'http://www.weblio.jp/content/'
-        self.cssselect = '.kiji .NetDicHead, .kiji .NetDicBody'
-        self.cssselect += ', .kiji .midashigo, .kiji .Jtnhj'
+        self.css_select = '.kiji .NetDicHead, .kiji .NetDicBody'
+        self.css_select += ', .kiji .midashigo, .kiji .Jtnhj'
 
         self.css = []
         self.css.append('.kiji .NetDicHead, .kiji .NetDicBody')
@@ -43,9 +45,10 @@ class WordSerach:
 
     def addHistory(self, data):
         tmp_data = [data]
+        # 履歴に既に同じ単語が含まれて居る場合は、その単語を先頭にする
         if len(self.history_datas) >= 1:
-            print('aaa')
-            self.history_datas = [h for h in self.history_datas if h['word'] != tmp_data[0]['word']]
+            self.history_datas = [h for h in self.history_datas if
+                                  h['word'] != tmp_data[0]['word']]
             tmp_data.extend(self.history_datas)
 
         self.history_datas = tmp_data
@@ -56,6 +59,7 @@ class WordSerach:
         self.addHistory(data)
 
         self.word = word
+        return data
 
     def deleteWord(self, word=None):
         if word is None:

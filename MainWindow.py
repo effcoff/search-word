@@ -5,33 +5,49 @@ from PyQt5.QtWidgets import *
 from WordSearch import WordSerach
 
 
+# from Singleton import Singleton
+
+
 class MainTitle(QLabel):
-    def __init__(self, parent, title):
+    def __init__(self, parent, title, font_size=40):
         super().__init__(parent)
 
+        font = QtGui.QFont(None, font_size, QtGui.QFont.Bold)
+
         self.setText(title)
-        main_font = QtGui.QFont('test', 40, QtGui.QFont.Bold)
-        self.setFont(main_font)
+        self.setFont(font)
         self.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
 
-class MyEntry(QGridLayout):
+class MyEntry(QFrame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.layout = QGridLayout(self)
 
-        self.rows = 0
+        self.__inputs = []
+
+        self.__rows = 0
 
     def addEntry(self, text, btn_text, func=None):
-        rows = self.rows
-        self.addWidget(QLabel(text + ':'), rows, 0)
-        self.inputLine = QLineEdit()
-        self.addWidget(self.inputLine, rows, 1)
-        search_button = QPushButton(btn_text)
-        if not func is None:
-            search_button.clicked.connect(func)
-        self.addWidget(search_button, rows, 2)
+        # ラベル 設定
+        self.layout.addWidget(QLabel(text + ':'), self.__rows, 0)
 
-        self.rows += 1
+        # 入力枠 設定
+        entry = QLineEdit()
+        entry.returnPressed.connect(func)
+        self.layout.addWidget(entry, self.__rows, 1)
+        self.__inputs.append(entry)
+
+        # ボタン 設定
+        search_btn = QPushButton(btn_text)
+        if not func is None:
+            search_btn.clicked.connect(func)
+        self.layout.addWidget(search_btn, self.__rows, 2)
+
+        self.__rows += 1
+
+    def getEntry(self, index=0):
+        return self.__inputs[index].text()
 
 
 class ResultBox(QScrollArea):
@@ -40,15 +56,15 @@ class ResultBox(QScrollArea):
 
         self.setWidgetResizable(True)
 
-        self.plainTextEdit = QPlainTextEdit()
-        self.plainTextEdit.setReadOnly(True)
-        self.setWidget(self.plainTextEdit)
+        self.text_box = QPlainTextEdit()
+        self.text_box.setReadOnly(True)
+        self.setWidget(self.text_box)
 
     def appendText(self, text):
-        self.plainTextEdit.appendPlainText(text)
+        self.text_box.appendPlainText(text)
 
     def setText(self, text):
-        self.plainTextEdit.setPlainText(text)
+        self.text_box.setPlainText(text)
 
 
 class TreeList(QTreeView):
@@ -83,30 +99,51 @@ class TreeList(QTreeView):
     def addItems(self, items):
         pass
 
+    def clearItems(self):
+        # リストが存在していたら、リスト全削除
+        if not self.model.hasChildren() is None:
+            count = self.model.rowCount()
+            self.model.removeRows(0, count)
+            self.index = 0
+            return True
+        return False
 
-class History(QVBoxLayout):
+
+class History(QFrame):
     def __init__(self, parent, ws):
         super().__init__(parent)
 
+        self.setMinimumWidth(250)
+
+        layout = QVBoxLayout(self)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+
         self.ws = ws
 
-        # history list
-        self.history_list = TreeList(None)
-        self.history_list.addModel(2, ['単語', '日時'])
-        self.history_list.addClicked(self.selectHistory)
-        self.addWidget(self.history_list)
+        # タイトル
+        self.title = MainTitle(None, '履歴', 18)
+        self.title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(self.title)
 
-        # result box
+        # リスト設定
+        self.list = TreeList(None)
+        self.list.addModel(2, ['単語', '日時'])
+        self.list.addClicked(self.selectHistory)
+        layout.addWidget(self.list)
+
+        # 意味表示ボックス
         self.result_box = ResultBox(None)
-        self.addWidget(self.result_box)
+        layout.addWidget(self.result_box)
 
         self.initHistory()
 
+    def getList(self):
+        if not self.list is None:
+            return self.list
+        return None
+
     def initHistory(self):
-        if not self.history_list.model.hasChildren() is None:
-            count = self.history_list.model.rowCount()
-            self.history_list.model.removeRows(0, count)
-            self.history_list.index = 0
+        self.list.clearItems()
 
         datas = self.ws.getHistory()
         if not datas is None:
@@ -116,7 +153,7 @@ class History(QVBoxLayout):
 
     def addItems(self, datas):
         for data in datas:
-            self.history_list.addItem([data[0], data[1]])
+            self.list.addItem([data[0], data[1]])
 
     def selectHistory(self, q_model):
         index = q_model.row()
@@ -128,42 +165,76 @@ class MainWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setMinimumSize(600, 500)
-        self.resize(600, 500)
+        self.setMinimumSize(700, 600)
+        self.resize(700, 600)
         self.setWindowTitle('Test')
 
         self.ws = WordSerach()
+        splitter = QSplitter(self)
 
         main_h_layout = QHBoxLayout()
         self.setLayout(main_h_layout)
 
-        # histoy layout
-        self.history_panel = History(None, self.ws)
-        main_h_layout.addLayout(self.history_panel)
+        # 履歴部分
+        self.history = History(self, self.ws)
+        # main_h_layout.addWidget(self.history)
+        splitter.addWidget(self.history)
 
-        main_layout = QVBoxLayout()
-        main_h_layout.addLayout(main_layout)
+        # メイン部分
+        main_layout = MainFrame(self, self.ws, self.history)
+        # main_h_layout.addWidget(main_layout)
+        splitter.addWidget(main_layout)
+        main_h_layout.addWidget(splitter)
 
-        # main title
+    def separatorV(self):
+        sep = QFrame()
+        sep.setFrameShape(QFrame.VLine)
+        sep.setFrameShadow(QFrame.Sunken)
+        return sep
+
+
+class MainFrame(QFrame):
+    def __init__(self, parent, ws, history):
+        super().__init__(parent)
+
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        self.ws = ws
+        self.history = history
+
+        # メインタイトル
         main_title = MainTitle(None, 'Search Word')
-        main_layout.addWidget(main_title)
+        main_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(main_title)
 
-        # search word entry
+        # 検索単語
         self.entry = MyEntry(None)
         self.entry.addEntry('検索単語', '検索', self.searchWord)
-        main_layout.addLayout(self.entry)
+        layout.addWidget(self.entry)
+        layout.addWidget(self.separatorH())
+
+        result_title = MainTitle(None, '-----  検索結果  -----', 10)
+        result_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(result_title)
 
         # reuslt box
         self.result_box = ResultBox(None)
-        main_layout.addWidget(self.result_box)
+        layout.addWidget(self.result_box)
+
+    def separatorH(self):
+        sep = QFrame()
+        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShadow(QFrame.Sunken)
+        return sep
 
     def searchWord(self):
-        word = self.entry.inputLine.text()
-        self.ws.insertDB(word)
-        mean = self.ws.getWord(word)['mean']
-        self.result_box.appendText(mean + '\n')
+        word = self.entry.getEntry()
+        main = MainWindow()
+        datas = self.ws.insertDB(word)
+        self.result_box.appendText(datas['mean'] + '\n')
 
-        self.history_panel.initHistory()
+        self.history.initHistory()
 
 
 if __name__ == '__main__':
