@@ -49,6 +49,7 @@ class MyEntry(QFrame):
     def getEntry(self, index=0):
         return self.__inputs[index].text()
 
+import setting_test as st
 
 class ResultBox(QScrollArea):
     def __init__(self, parent):
@@ -56,8 +57,10 @@ class ResultBox(QScrollArea):
 
         self.setWidgetResizable(True)
 
+        font = QtGui.QFont(None, st.getFontSize())
         self.text_box = QPlainTextEdit()
         self.text_box.setReadOnly(True)
+        self.text_box.setFont(font)
         self.setWidget(self.text_box)
 
     def appendText(self, text):
