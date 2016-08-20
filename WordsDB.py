@@ -72,9 +72,9 @@ class WordsDB(DataBase):
             datas = [self.createWordDic(word) for word in words]
             return datas
 
-    def selectAllOrderByUpdatedDesc(self):
+    def selectAllOrderByUpdatedDesc(self, limit=40):
         with self.start_session() as s:
-            words = s.query(Words).order_by(sa.desc(Words.updated_time)).all()
+            words = s.query(Words).order_by(sa.desc(Words.updated_time)).limit(limit).all()
             if len(words) <= 0:
                 return None
 

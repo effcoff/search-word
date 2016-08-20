@@ -232,6 +232,9 @@ class MainFrame(QFrame):
         word = self.entry.getEntry()
         main = MainWindow()
         datas = self.ws.insertDB(word)
+        if datas is None:
+            self.result_box.appendText('意味が見つかりませんでした。' + '\n')
+            return None
         self.result_box.appendText(datas['mean'] + '\n')
 
         self.history.initHistory()

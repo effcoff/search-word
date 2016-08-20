@@ -9,7 +9,7 @@ from sqlalchemy.orm import reconstructor, sessionmaker
 class DataBase:
     Base = declarative_base()
 
-    def __init__(self, dburl='sqlite:///:memory:', checkfirst=True, echo=False):
+    def __init__(self, dburl='sqlite:///test10.db', checkfirst=True, echo=False):
         engine = sa.create_engine(dburl, echo=echo)
         self.Base.metadata.create_all(engine, checkfirst=checkfirst)
 
