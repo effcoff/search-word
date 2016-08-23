@@ -12,7 +12,9 @@ class MainTitle(QLabel):
     def __init__(self, parent, title, font_size=40):
         super().__init__(parent)
 
-        font = QtGui.QFont(None, font_size, QtGui.QFont.Bold)
+        font = QtGui.QFont()
+        font.setPointSize(font_size)
+        font.setWeight(QtGui.QFont.Bold)
 
         self.setText(title)
         self.setFont(font)
@@ -57,17 +59,16 @@ class ResultBox(QScrollArea):
 
         self.setWidgetResizable(True)
 
-        font = QtGui.QFont(None, st.getFontSize())
-        self.text_box = QPlainTextEdit()
+        self.text_box = QTextEdit()
+        self.text_box.setAcceptRichText(True)
         self.text_box.setReadOnly(True)
-        self.text_box.setFont(font)
         self.setWidget(self.text_box)
 
     def appendText(self, text):
-        self.text_box.appendPlainText(text)
+        self.text_box.appendText(text)
 
     def setText(self, text):
-        self.text_box.setPlainText(text)
+        self.text_box.setText(text)
 
 
 class TreeList(QTreeView):
@@ -164,7 +165,7 @@ class History(QFrame):
         self.result_box.setText(mean + '\n')
 
 
-class MainWindow(QWidget):
+class MainWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -242,6 +243,36 @@ class MainFrame(QFrame):
 
         self.history.initHistory()
 
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        main_widget = MainWidget()
+        self.setCentralWidget(main_widget)
+
+        self.statusBar().showMessage('Ready')
+
+        self.setMenuBar()
+
+    def setMenuBar(self):
+        exitAction = QAction('&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip('Exit search word')
+        exitAction.triggered.connect(qApp.quit)
+
+        settingAction = QAction('&Settings', self)
+        settingAction.setShortcut('Ctrl+Alt+S')
+        settingAction.setStatusTip('Setting search word')
+        settingAction.triggered.connect(self.showSettingsWindow)
+
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('&File')
+        file_menu.addAction(settingAction)
+        file_menu.addAction(exitAction)
+
+    def showSettingsWindow(self):
+        print('show setting')
+        pass
 
 if __name__ == '__main__':
     import sys
