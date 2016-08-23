@@ -3,114 +3,9 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 
 from WordSearch import WordSerach
+from SettingsWindow import SettingsWindow
 
-
-# from Singleton import Singleton
-
-
-class MainTitle(QLabel):
-    def __init__(self, parent, title, font_size=40):
-        super().__init__(parent)
-
-        font = QtGui.QFont()
-        font.setPointSize(font_size)
-        font.setWeight(QtGui.QFont.Bold)
-
-        self.setText(title)
-        self.setFont(font)
-        self.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
-
-
-class MyEntry(QFrame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.layout = QGridLayout(self)
-
-        self.__inputs = []
-
-        self.__rows = 0
-
-    def addEntry(self, text, btn_text, func=None):
-        # ラベル 設定
-        self.layout.addWidget(QLabel(text + ':'), self.__rows, 0)
-
-        # 入力枠 設定
-        entry = QLineEdit()
-        entry.returnPressed.connect(func)
-        self.layout.addWidget(entry, self.__rows, 1)
-        self.__inputs.append(entry)
-
-        # ボタン 設定
-        search_btn = QPushButton(btn_text)
-        if not func is None:
-            search_btn.clicked.connect(func)
-        self.layout.addWidget(search_btn, self.__rows, 2)
-
-        self.__rows += 1
-
-    def getEntry(self, index=0):
-        return self.__inputs[index].text()
-
-import setting_test as st
-
-class ResultBox(QScrollArea):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        self.setWidgetResizable(True)
-
-        self.text_box = QTextEdit()
-        self.text_box.setAcceptRichText(True)
-        self.text_box.setReadOnly(True)
-        self.setWidget(self.text_box)
-
-    def appendText(self, text):
-        self.text_box.appendText(text)
-
-    def setText(self, text):
-        self.text_box.setText(text)
-
-
-class TreeList(QTreeView):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        self.index = 0
-
-    def addModel(self, cols, textes):
-        self.model = QtGui.QStandardItemModel(0, cols)
-
-        if cols != len(textes):
-            print('cols: {}  !=  textes length: {}'.format(cols, len(textes)))
-            exit()
-        else:
-            for col in range(cols):
-                self.model.setHeaderData(col, QtCore.Qt.Horizontal, textes[col])
-
-        self.setModel(self.model)
-
-    def addClicked(self, func):
-        self.clicked.connect(func)
-
-    def addItem(self, item):
-        for i, data in enumerate(item):
-            s_item = QtGui.QStandardItem(data)
-            s_item.setEditable(False)
-            self.model.setItem(self.index, i, s_item)
-
-        self.index += 1
-
-    def addItems(self, items):
-        pass
-
-    def clearItems(self):
-        # リストが存在していたら、リスト全削除
-        if not self.model.hasChildren() is None:
-            count = self.model.rowCount()
-            self.model.removeRows(0, count)
-            self.index = 0
-            return True
-        return False
+from common import *
 
 
 class History(QFrame):
@@ -243,6 +138,7 @@ class MainFrame(QFrame):
 
         self.history.initHistory()
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -271,8 +167,10 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exitAction)
 
     def showSettingsWindow(self):
-        print('show setting')
-        pass
+        settings_win = SettingsWindow(self)
+        settings_win.show()
+        print('showshow')
+
 
 if __name__ == '__main__':
     import sys

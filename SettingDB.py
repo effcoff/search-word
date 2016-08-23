@@ -11,7 +11,7 @@ class Settings(DataBase.Base):
 
 class SettingsDB(DataBase):
     def __init__(self):
-        super().__init__(dburl='sqlite:///settings.xml')
+        super().__init__(dburl='sqlite:///settings.st')
         self.initInsert()
 
     def initInsert(self):
@@ -28,6 +28,17 @@ class SettingsDB(DataBase):
             s.add(setting)
         print('init settings database end!!')
 
+    def updateSettings(self, dbname, fontsize, history_num):
+        datas = {
+            'dbname': dbname,
+            'fontsize': fontsize,
+            'history_num': history_num
+        }
+        dump_data = pickle.dumps(datas)
+        with self.start_session(commit=True) as s:
+            data = s.query(Settings).first()
+            data.setting = dump_data
+
     def isInit(self):
         with self.start_session() as s:
             words = s.query(Settings).all()
@@ -38,12 +49,11 @@ class SettingsDB(DataBase):
 
     def getSettings(self):
         with self.start_session() as s:
-            data = s.query(Settings).order_by(Settings.id).first()
+            data = s.query(Settings).first()
             if data is None:
                 return None
 
             return pickle.loads(data.setting)
-
 
 
 if __name__ == '__main__':
