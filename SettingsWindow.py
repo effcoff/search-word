@@ -26,34 +26,16 @@ class SettingsWidget(QWidget):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        self.labels = ['データベース名', 'フォントサイズ', '履歴表示数']
+        self.entry = SettingEntryPanel(self.setResult)
+        main_layout.addWidget(self.entry)
+
         self.setting_db = SettingsDB()
-        settings = self.setting_db.getSettings()
+        self.settings = self.setting_db.getSettings()
 
-        entry = SettingList(None)
-        entry.addEntry(self.labels[self.DB_NAME],
-                       default=settings['dbname'],
-                       func=self.changeDbName)
-
-        font_sizes = [str(i) for i in range(40)]
-        entry.addCombo(self.labels[self.FONT_SIZE],
-                       font_sizes,
-                       current_index=settings['fontsize'],
-                       func=self.changefontSize)
-
-        self.history_nums = [str(i) for i in range(201) if i % 5 == 0 and i != 0]
-        his_num = self.history_nums.index(str(settings['history_num']))
-
-        entry.addCombo(self.labels[self.HISTORY_NUM],
-                       self.history_nums,
-                       current_index=his_num,
-                       func=self.changeHistoryNum)
-        main_layout.addWidget(entry)
-
-        self.result_texts = ['' for _ in range(len(self.labels))]
-        self.result_texts[self.DB_NAME] = settings['dbname']
-        self.result_texts[self.FONT_SIZE] = settings['fontsize']
-        self.result_texts[self.HISTORY_NUM] = settings['history_num']
+        self.result_texts = ['' for _ in range(len(self.settings))]
+        self.result_texts[self.DB_NAME] = self.settings['dbname']
+        self.result_texts[self.FONT_SIZE] = self.settings['fontsize']
+        self.result_texts[self.HISTORY_NUM] = self.settings['history_num']
         self.result_box = ResultBox(None)
         self.result_box.setFontSize(int(self.result_texts[self.FONT_SIZE]))
         main_layout.addWidget(self.result_box)
@@ -85,7 +67,7 @@ class SettingsWidget(QWidget):
         self.setResult()
 
     def setResult(self):
-        str = '\n'.join(['{} : {}'.format(label, self.result_texts[i]) for i, label in enumerate(self.labels)])
+        str = '\n'.join(['{} : {}'.format(setting['label'], setting['value']) for setting in self.entry.getSettings()])
         self.result_box.setFontSize(int(self.result_texts[self.FONT_SIZE]))
         self.result_box.setText(str)
 
@@ -105,6 +87,77 @@ class SettingsWidget(QWidget):
     def cancelSettings(self):
         self.parent.destroy()
         pass
+
+
+class SettingEntryPanel(QFrame):
+    DB_NAME = 0
+    FONT_SIZE = 1
+    HISTORY_NUM = 2
+
+    def __init__(self, callback=None):
+        super().__init__()
+
+        if not callback is None:
+            self.callback = callback
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.labels = ['データベース名', 'フォントサイズ', '履歴表示数']
+        self.setting_db = SettingsDB()
+        settings = self.setting_db.getSettings()
+
+        # データベース名設定項目
+        entry = SettingList(None)
+        entry.addEntry(self.labels[self.DB_NAME],
+                       default=settings['dbname'],
+                       func=self.changeDbName)
+
+        # フォントサイズ設定項目
+        font_sizes = [str(i) for i in range(40)]
+        entry.addCombo(self.labels[self.FONT_SIZE],
+                       font_sizes,
+                       current_index=settings['fontsize'],
+                       func=self.changefontSize)
+
+        # 履歴表示数設定項目
+        self.history_nums = [str(i) for i in range(201) if i % 5 == 0 and i != 0]
+        his_num = self.history_nums.index(str(settings['history_num']))
+        entry.addCombo(self.labels[self.HISTORY_NUM],
+                       self.history_nums,
+                       current_index=his_num,
+                       func=self.changeHistoryNum)
+        layout.addWidget(entry)
+
+        # 設定値の初期化
+        self.values = [settings['dbname'],
+                       settings['fontsize'],
+                       settings['history_num']]
+
+
+    def callBack(self):
+        if not self.callback is None:
+            self.callback()
+
+    def changeDbName(self, value):
+        self.values[self.DB_NAME] = value
+        self.callBack()
+
+    def changefontSize(self, value):
+        self.values[self.FONT_SIZE] = value
+        self.callBack()
+
+    def changeHistoryNum(self, value):
+        self.values[self.HISTORY_NUM] = int(self.history_nums[value])
+        self.callBack()
+
+    def getSettings(self):
+        settings = [
+            {'label': self.labels[self.DB_NAME], 'value': self.values[self.DB_NAME]},
+            {'label': self.labels[self.FONT_SIZE], 'value': self.values[self.FONT_SIZE]},
+            {'label': self.labels[self.HISTORY_NUM], 'value': self.values[self.HISTORY_NUM]}
+        ]
+        return settings
 
 
 class SettingList(QFrame):
