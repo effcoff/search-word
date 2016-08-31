@@ -26,10 +26,16 @@ class SettingsWidget(QWidget):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        self.entry = SettingEntryPanel(self.setResult)
+        self.setting_db = SettingsDB()
+        self.settings = self.setting_db.getSettings()
+        entry_values = {
+            SettingEntryPanel.DB_NAME: self.settings['dbname'],
+            SettingEntryPanel.FONT_SIZE: self.settings['fontsize'],
+            SettingEntryPanel.HISTORY_NUM: self.settings['history_num']
+        }
+        self.entry = SettingEntryPanel(entry_values, self.setResult)
         main_layout.addWidget(self.entry)
 
-        self.setting_db = SettingsDB()
         self.settings = self.setting_db.getSettings()
 
         self.result_texts = ['' for _ in range(len(self.settings))]
@@ -94,7 +100,7 @@ class SettingEntryPanel(QFrame):
     FONT_SIZE = 1
     HISTORY_NUM = 2
 
-    def __init__(self, callback=None):
+    def __init__(self, settings, callback=None):
         super().__init__()
 
         if not callback is None:
@@ -104,35 +110,33 @@ class SettingEntryPanel(QFrame):
         self.setLayout(layout)
 
         self.labels = ['データベース名', 'フォントサイズ', '履歴表示数']
-        self.setting_db = SettingsDB()
-        settings = self.setting_db.getSettings()
 
         # データベース名設定項目
         entry = SettingList(None)
         entry.addEntry(self.labels[self.DB_NAME],
-                       default=settings['dbname'],
+                       default=settings[self.DB_NAME],
                        func=self.changeDbName)
 
         # フォントサイズ設定項目
         font_sizes = [str(i) for i in range(40)]
         entry.addCombo(self.labels[self.FONT_SIZE],
                        font_sizes,
-                       current_index=settings['fontsize'],
+                       current_index=settings[self.FONT_SIZE],
                        func=self.changefontSize)
 
         # 履歴表示数設定項目
         self.history_nums = [str(i) for i in range(201) if i % 5 == 0 and i != 0]
-        his_num = self.history_nums.index(str(settings['history_num']))
+        his_num = self.history_nums.index(str(settings[self.HISTORY_NUM]))
         entry.addCombo(self.labels[self.HISTORY_NUM],
                        self.history_nums,
                        current_index=his_num,
+
                        func=self.changeHistoryNum)
         layout.addWidget(entry)
 
         # 設定値の初期化
-        self.values = [settings['dbname'],
-                       settings['fontsize'],
-                       settings['history_num']]
+        print(sorted(settings, key=settings.get, reverse=True))
+        self.values = []
 
 
     def callBack(self):
