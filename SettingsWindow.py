@@ -6,6 +6,7 @@ from PyQt5 import QtGui, QtCore
 from SettingDB import SettingsDB
 
 
+# 設定画面メイン
 class SettingsWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -14,38 +15,28 @@ class SettingsWindow(QMainWindow):
         self.setCentralWidget(setting_widget)
 
 
+# 設定画面のウィジェット
 class SettingsWidget(QWidget):
-    DB_NAME = 0
-    FONT_SIZE = 1
-    HISTORY_NUM = 2
-
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
 
+        # 設定データベース
+        self.setting_db = SettingsDB()
+
+        # メインレイアウト設定
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        self.setting_db = SettingsDB()
-        self.settings = self.setting_db.getSettings()
-        entry_values = {
-            SettingEntryPanel.DB_NAME: self.settings['dbname'],
-            SettingEntryPanel.FONT_SIZE: self.settings['fontsize'],
-            SettingEntryPanel.HISTORY_NUM: self.settings['history_num']
-        }
-        self.entry = SettingEntryPanel(entry_values, self.setResult)
+        # 設定入力エントリー
+        self.entry = SettingEntryPanel(self.setResult)
         main_layout.addWidget(self.entry)
 
-        self.settings = self.setting_db.getSettings()
-
-        self.result_texts = ['' for _ in range(len(self.settings))]
-        self.result_texts[self.DB_NAME] = self.settings['dbname']
-        self.result_texts[self.FONT_SIZE] = self.settings['fontsize']
-        self.result_texts[self.HISTORY_NUM] = self.settings['history_num']
+        # 変更結果表示ボックス
         self.result_box = ResultBox(None)
-        self.result_box.setFontSize(int(self.result_texts[self.FONT_SIZE]))
         main_layout.addWidget(self.result_box)
 
+        # ボタン
         btn_layout = QHBoxLayout()
         ok_btn = QPushButton('保存')
         ok_btn.clicked.connect(self.saveSettings)
@@ -54,33 +45,23 @@ class SettingsWidget(QWidget):
         cancel_btn = QPushButton('キャンセル')
         cancel_btn.clicked.connect(self.cancelSettings)
         btn_layout.addWidget(cancel_btn)
-
         main_layout.addLayout(btn_layout)
 
         self.setResult()
-        print('ensd')
 
-    def changeDbName(self, value):
-        self.result_texts[self.DB_NAME] = value
-        self.setResult()
-
-    def changefontSize(self, value):
-        self.result_texts[self.FONT_SIZE] = int(value)
-        self.setResult()
-
-    def changeHistoryNum(self, value):
-        self.result_texts[self.HISTORY_NUM] = int(self.history_nums[value])
-        self.setResult()
-
+    # 結果表示ボックスに表示させる
     def setResult(self):
-        str = '\n'.join(['{} : {}'.format(setting['label'], setting['value']) for setting in self.entry.getSettings()])
-        self.result_box.setFontSize(int(self.result_texts[self.FONT_SIZE]))
+        str = '\n'.join(['{} : {}'.format(setting['label'], setting['value'])
+                         for setting in self.entry.getSettings()])
+        fontsize = self.entry.getFontSize()
+        self.result_box.setFontSize(int(fontsize))
         self.result_box.setText(str)
 
+    # 設定を保存する
     def saveSettings(self):
-        dbname = self.result_texts[self.DB_NAME]
-        fontsize = self.result_texts[self.FONT_SIZE]
-        history_num = self.result_texts[self.HISTORY_NUM]
+        dbname = self.entry.getDBName()
+        fontsize = self.entry.getFontSize()
+        history_num = self.entry.getHistoryNum()
         self.setting_db.updateSettings(dbname,
                                        fontsize,
                                        history_num)
@@ -88,56 +69,63 @@ class SettingsWidget(QWidget):
         ShowInfo(text='保存されました。',
                  info_text='保存内容を反映させるためには、再起動をおこなってください。',
                  parent=self)
-        self.parent.destroy()
 
+    # 設定をキャンセルし元にもどる
     def cancelSettings(self):
         self.parent.destroy()
         pass
 
 
+# 設定入力パネル
 class SettingEntryPanel(QFrame):
     DB_NAME = 0
     FONT_SIZE = 1
     HISTORY_NUM = 2
 
-    def __init__(self, settings, callback=None):
+    def __init__(self, callback=None):
         super().__init__()
 
+        # 設定内容を変更した際に呼び出させる関数
         if not callback is None:
             self.callback = callback
 
+        # メインレイアウト
         layout = QVBoxLayout()
         self.setLayout(layout)
 
+        # 設定値の初期化
+        db = SettingsDB()
+        settings = db.getSettings()
+        self.values = [
+            settings['dbname'],
+            settings['fontsize'],
+            settings['history_num']
+        ]
         self.labels = ['データベース名', 'フォントサイズ', '履歴表示数']
 
         # データベース名設定項目
         entry = SettingList(None)
         entry.addEntry(self.labels[self.DB_NAME],
-                       default=settings[self.DB_NAME],
+                       default=self.values[self.DB_NAME],
                        func=self.changeDbName)
 
         # フォントサイズ設定項目
         font_sizes = [str(i) for i in range(40)]
         entry.addCombo(self.labels[self.FONT_SIZE],
                        font_sizes,
-                       current_index=settings[self.FONT_SIZE],
+                       current_index=self.values[self.FONT_SIZE],
                        func=self.changefontSize)
 
         # 履歴表示数設定項目
         self.history_nums = [str(i) for i in range(201) if i % 5 == 0 and i != 0]
-        his_num = self.history_nums.index(str(settings[self.HISTORY_NUM]))
+        his_num = self.history_nums.index(str(self.values[self.HISTORY_NUM]))
         entry.addCombo(self.labels[self.HISTORY_NUM],
                        self.history_nums,
                        current_index=his_num,
 
                        func=self.changeHistoryNum)
+
         layout.addWidget(entry)
-
-        # 設定値の初期化
-        print(sorted(settings, key=settings.get, reverse=True))
-        self.values = []
-
 
     def callBack(self):
         if not self.callback is None:
@@ -157,13 +145,24 @@ class SettingEntryPanel(QFrame):
 
     def getSettings(self):
         settings = [
-            {'label': self.labels[self.DB_NAME], 'value': self.values[self.DB_NAME]},
-            {'label': self.labels[self.FONT_SIZE], 'value': self.values[self.FONT_SIZE]},
-            {'label': self.labels[self.HISTORY_NUM], 'value': self.values[self.HISTORY_NUM]}
+            {'label': self.labels[self.DB_NAME], 'value': self.getDBName()},
+            {'label': self.labels[self.FONT_SIZE], 'value': self.getFontSize()},
+            {'label': self.labels[self.HISTORY_NUM], 'value': self.getHistoryNum()}
         ]
         return settings
 
+    # 設定取得
+    def getDBName(self):
+        return self.values[self.DB_NAME]
 
+    def getFontSize(self):
+        return self.values[self.FONT_SIZE]
+
+    def getHistoryNum(self):
+        return self.values[self.HISTORY_NUM]
+
+
+# 設定エントリ生成クラス
 class SettingList(QFrame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -173,6 +172,7 @@ class SettingList(QFrame):
 
         self.__rows = 0
 
+    # ラベルとエントリの追加
     def addEntry(self, text, default=None, func=None):
         self.layout.addWidget(QLabel(text + ':'), self.__rows, 0)
 
@@ -187,6 +187,7 @@ class SettingList(QFrame):
 
         self.__rows += 1
 
+    # ラベルとコンボボックスの追加
     def addCombo(self, text, items, current_index=0, func=None):
         self.layout.addWidget(QLabel(text + ':'), self.__rows, 0)
 

@@ -14,11 +14,13 @@ class SettingsDB(DataBase):
         super().__init__(dburl='sqlite:///settings.st')
         self.initInsert()
 
+    # 初期設定されていなかったら、初期設定を行う
     def initInsert(self):
         if self.isInit() is False:
             return
         with self.start_session(commit=True) as s:
             setting = Settings()
+            # デフォルト値
             datas = {'dbname': ':memory:',
                      'fontsize': 12,
                      'history_num': 10}
@@ -28,6 +30,7 @@ class SettingsDB(DataBase):
             s.add(setting)
         print('init settings database end!!')
 
+    # 設定を更新する
     def updateSettings(self, dbname, fontsize, history_num):
         datas = {
             'dbname': dbname,
@@ -39,6 +42,7 @@ class SettingsDB(DataBase):
             data = s.query(Settings).first()
             data.setting = dump_data
 
+    # 初期設定されているかの判定
     def isInit(self):
         with self.start_session() as s:
             words = s.query(Settings).all()
@@ -47,6 +51,7 @@ class SettingsDB(DataBase):
 
         return False
 
+    # 設定を取得
     def getSettings(self):
         with self.start_session() as s:
             data = s.query(Settings).first()
