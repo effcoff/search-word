@@ -22,6 +22,9 @@ class Words(DataBase.Base):
 
 
 class WordsDB(DataBase):
+    def __init__(self, dburl):
+        super().__init__(dburl=dburl)
+
     def insert(self, word, mean):
         with self.start_session(commit=True) as s:
             # 既に単語が登録されていたら、更新日時を更新して終了

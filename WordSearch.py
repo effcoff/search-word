@@ -6,10 +6,11 @@ import requests
 import WordsDB as db
 
 from Singleton import Singleton
+from SettingDB import SettingsDB
 
 
 class WordSerach(metaclass=Singleton):
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.target_url = 'http://www.weblio.jp/content/'
         self.css_select = '.kiji .NetDicHead, .kiji .NetDicBody'
         self.css_select += ', .kiji .midashigo, .kiji .Jtnhj'
@@ -18,9 +19,10 @@ class WordSerach(metaclass=Singleton):
         self.css.append('.kiji .NetDicHead, .kiji .NetDicBody')
         self.css.append('.kiji .midashigo, .kiji .Jtnhj')
 
-        self.db = db.DataBase(**kwargs)
-        self.word_db = db.WordsDB()
-        self.max_history = 40
+        setting_db = SettingsDB()
+        dburl = 'sqlite:///' + setting_db.getSettings()['dbname']
+        self.word_db = db.WordsDB(dburl=dburl)
+        self.max_history = int(setting_db.getSettings()['history_num'])
         self.history_datas = []
         self.getHistory()
 
