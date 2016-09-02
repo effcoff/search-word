@@ -141,7 +141,7 @@ class WordList(QFrame):
 
         self.title = None
         self.list = None
-        self.reuslt_box = None
+        self.result_box = None
 
         self.__cols = 0
 
