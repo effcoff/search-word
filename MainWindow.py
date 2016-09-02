@@ -6,9 +6,10 @@ from WordSearch import WordSerach
 from SettingsWindow import SettingsWindow
 
 from common import *
+from WordListWindow import WordListWindow
 
 
-class History(QFrame):
+class History(WordList):
     def __init__(self, parent, ws):
         super().__init__(parent)
 
@@ -20,44 +21,25 @@ class History(QFrame):
         self.ws = ws
 
         # タイトル
-        self.title = MainTitle(None, '履歴', 18)
-        self.title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.title = self.createTitle('履歴', 18)
         layout.addWidget(self.title)
 
         # リスト設定
-        self.list = TreeList(None)
-        self.list.addModel(2, ['単語', '日時'])
-        self.list.addClicked(self.selectHistory)
+        self.list = self.createList(2, ['単語', '日時'])
         layout.addWidget(self.list)
 
         # 意味表示ボックス
-        self.result_box = ResultBox(None)
-        layout.addWidget(self.result_box)
+        self.box = self.createResultBox()
+        layout.addWidget(self.box)
 
-        self.initHistory()
+        self.initHistoryList()
 
-    def getList(self):
-        if not self.list is None:
-            return self.list
-        return None
-
-    def initHistory(self):
-        self.list.clearItems()
-
-        datas = self.ws.getHistory()
+    def initHistoryList(self):
+        datas = self.getWords(self.ws.word_db)
         if not datas is None:
-            self.items = [(item['word'], item['updated_time'].strftime('%Y-%m-%d'),
-                           item['mean']) for item in datas]
-            self.addItems(self.items)
-
-    def addItems(self, datas):
-        for data in datas:
-            self.list.addItem([data[0], data[1]])
-
-    def selectHistory(self, q_model):
-        index = q_model.row()
-        mean = self.items[index][2]
-        self.result_box.setText(mean + '\n')
+            list_items = [(item[self.WORD], item[self.UPDATE_TIME])
+                          for item in self.items]
+            self.initList(list_items)
 
 
 class MainWidget(QWidget):
@@ -134,9 +116,10 @@ class MainFrame(QFrame):
         if datas is None:
             self.result_box.appendText('意味が見つかりませんでした。' + '\n')
             return None
+
         self.result_box.appendText(datas['mean'] + '\n')
 
-        self.history.initHistory()
+        self.history.initHistoryList()
 
 
 class MainWindow(QMainWindow):
@@ -151,25 +134,35 @@ class MainWindow(QMainWindow):
         self.setMenuBar()
 
     def setMenuBar(self):
-        exitAction = QAction('&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip('Exit search word')
-        exitAction.triggered.connect(qApp.quit)
+        exit_action = QAction('&終了', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.setStatusTip('Exit search word')
+        exit_action.triggered.connect(qApp.quit)
 
-        settingAction = QAction('&Settings', self)
-        settingAction.setShortcut('Ctrl+Alt+S')
-        settingAction.setStatusTip('Setting search word')
-        settingAction.triggered.connect(self.showSettingsWindow)
+        setting_action = QAction('&設定', self)
+        setting_action.setShortcut('Ctrl+Alt+S')
+        setting_action.setStatusTip('Setting search word')
+        setting_action.triggered.connect(self.showSettingsWindow)
+
+        wordlist_action = QAction('&単語一覧', self)
+        wordlist_action.setShortcut('Ctrl+Alt+S')
+        wordlist_action.setStatusTip('Setting search word')
+        wordlist_action.triggered.connect(self.showWordList)
 
         menubar = self.menuBar()
         file_menu = menubar.addMenu('&File')
-        file_menu.addAction(settingAction)
-        file_menu.addAction(exitAction)
+        file_menu.addAction(setting_action)
+        file_menu.addAction(wordlist_action)
+        file_menu.addAction(exit_action)
 
     def showSettingsWindow(self):
         settings_win = SettingsWindow(self)
         settings_win.show()
         print('showshow')
+
+    def showWordList(self):
+        wordlist_win = WordListWindow(self)
+        wordlist_win.show()
 
 
 if __name__ == '__main__':

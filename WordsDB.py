@@ -6,6 +6,8 @@ from sqlalchemy.orm import reconstructor
 
 from DataBase import DataBase
 
+from SettingDB import SettingsDB
+
 
 class Words(DataBase.Base):
     __tablename__ = 'words'
@@ -22,7 +24,9 @@ class Words(DataBase.Base):
 
 
 class WordsDB(DataBase):
-    def __init__(self, dburl):
+    def __init__(self, dburl=None):
+        setting_db = SettingsDB()
+        dburl = 'sqlite:///' + setting_db.getSettings()['dbname']
         super().__init__(dburl=dburl)
 
     def insert(self, word, mean):
@@ -75,10 +79,11 @@ class WordsDB(DataBase):
             datas = [self.createWordDic(word) for word in words]
             return datas
 
-    def selectAllOrderByUpdatedDesc(self, limit=40):
+    def selectAllOrderByUpdatedDesc(self, limit=-1):
         with self.start_session() as s:
             words = s.query(Words).order_by(sa.desc(Words.updated_time)).limit(limit).all()
             if len(words) <= 0:
+                print(123)
                 return None
 
             datas = [self.createWordDic(word) for word in words]
