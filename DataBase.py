@@ -15,6 +15,8 @@ class DataBase:
 
         self.Session = sessionmaker(bind=engine, autocommit=False)
 
+        self.engine = engine
+
     @contextmanager
     def start_session(self, commit=False):
         session = None
