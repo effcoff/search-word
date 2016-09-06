@@ -172,10 +172,10 @@ class WordList(QFrame):
     def initList(self, datas):
         self.list.clearItems()
 
-        # 配列の中身がなく、リストヘッダーの個数でなけれな、処理終える
-        if len(datas) <= 0 and len(datas[0]) != self.__cols:
-            print('Wordlist input datas-length: {}, datas[0]-length: {}'.format(
-                len(datas), len(datas[0])
+        # 配列の中身がなければ、処理終える
+        if len(datas) <= 0:
+            print('Wordlist input datas-length: {}'.format(
+                len(datas)
             ))
             return None
 
@@ -200,6 +200,14 @@ class WordList(QFrame):
     def selectWord(self, q_model):
         value = self.getSelectValues(q_model)
         self.setResultBox(value[self.MEAN])
+
+    def getSelectedValues(self):
+        indexes = self.list.selectedIndexes()
+        if len(indexes) <= 0:
+            return None
+        q_model = indexes[0]
+        values = self.getSelectValues(q_model)
+        return values
 
     def getWords(self, db, limit=-1):
         datas = db.selectAllOrderByUpdatedDesc(limit)

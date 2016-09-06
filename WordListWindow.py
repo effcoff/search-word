@@ -20,7 +20,7 @@ class WordListWidget(WordList):
         self.setLayout(h_layout)
 
         # 単語リストレイアウト
-        wordlist_frame = self.ListFrame(self)
+        wordlist_frame = ListFrame(self)
         h_layout.addWidget(wordlist_frame)
 
         # 右の表示ボックス
@@ -31,27 +31,55 @@ class WordListWidget(WordList):
 
     def initWordList(self):
         datas = self.getWords(WordsDB())
+        print(datas)
+        self.list_items = []
         if not datas is None:
-            list_items = [(item[self.WORD], item[self.UPDATE_TIME])
-                          for item in self.items]
-            self.initList(list_items)
+            self.list_items = [(item[self.WORD], item[self.UPDATE_TIME])
+                          for item in datas]
+        self.initList(self.list_items)
 
-    class ListFrame(QFrame):
-        def __init__(self, wordlist):
-            super().__init__()
 
-            # 単語リストレイアウト
-            list_layout = QVBoxLayout()
-            self.setLayout(list_layout)
 
-            # タイトル
-            self.title = wordlist.createTitle('単語リスト', 18)
-            list_layout.addWidget(self.title)
+class ListFrame(QFrame):
+    def __init__(self, wordlist):
+        super().__init__()
 
-            # 単語リスト
-            self.list = TreeList(None)
-            self.list = wordlist.createList(2, ['単語', '日時'])
-            list_layout.addWidget(self.list)
+        # 単語リストレイアウト
+        list_layout = QVBoxLayout()
+        self.setLayout(list_layout)
+
+        self.wordlist = wordlist
+        # タイトル
+        self.title = wordlist.createTitle('単語リスト', 18)
+        list_layout.addWidget(self.title)
+
+        # 単語リスト
+        self.list = TreeList(None)
+        self.list = wordlist.createList(2, ['単語', '日時'])
+        list_layout.addWidget(self.list)
+
+        #ボタン
+        self.btn = QPushButton('削除')
+        self.btn.clicked.connect(self.deleteWord)
+        list_layout.addWidget(self.btn)
+
+    def deleteWord(self):
+        values = self.wordlist.getSelectedValues()
+        if values is None:
+            return False
+
+        word = values[self.wordlist.WORD]
+        db = WordsDB()
+        res = db.deleteWord(word)
+        if res is False:
+            print('not delete word:{}'.format(word))
+            return False
+
+        print('deleted:{}'.format(word))
+
+        self.wordlist.initWordList()
+
+
 
 
 if __name__ == '__main__':
