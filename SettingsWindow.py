@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 import sys
 from common import ResultBox, ShowInfo
-from PyQt5 import QtGui, QtCore
 
 from SettingDB import SettingsDB
 
@@ -51,8 +50,10 @@ class SettingsWidget(QWidget):
 
     # 結果表示ボックスに表示させる
     def setResult(self):
-        str = '\n'.join(['{} : {}'.format(setting['label'], setting['value'])
-                         for setting in self.entry.getSettings()])
+        str = '\n'.join([
+            '{} : {}'.format(setting['label'], setting['value'])
+            for setting in self.entry.getSettings()
+        ])
         fontsize = self.entry.getFontSize()
         self.result_box.setFontSize(int(fontsize))
         self.result_box.setText(str)
@@ -62,18 +63,16 @@ class SettingsWidget(QWidget):
         dbname = self.entry.getDBName()
         fontsize = self.entry.getFontSize()
         history_num = self.entry.getHistoryNum()
-        self.setting_db.updateSettings(dbname,
-                                       fontsize,
-                                       history_num)
+        self.setting_db.updateSettings(dbname, fontsize, history_num)
 
-        ShowInfo(text='保存されました。',
-                 info_text='保存内容を反映させるためには、再起動をおこなってください。',
-                 parent=self)
+        ShowInfo(
+            text='保存されました。',
+            info_text='保存内容を反映させるためには、再起動をおこなってください。',
+            parent=self)
 
     # 設定をキャンセルし元にもどる
     def cancelSettings(self):
         self.parent.destroy()
-        pass
 
 
 # 設定入力パネル
@@ -97,33 +96,35 @@ class SettingEntryPanel(QFrame):
         db = SettingsDB()
         settings = db.getSettings()
         self.values = [
-            settings['dbname'],
-            settings['fontsize'],
-            settings['history_num']
+            settings['dbname'], settings['fontsize'], settings['history_num']
         ]
         self.labels = ['データベース名', 'フォントサイズ', '履歴表示数']
 
         # データベース名設定項目
         entry = SettingList(None)
-        entry.addEntry(self.labels[self.DB_NAME],
-                       default=self.values[self.DB_NAME],
-                       func=self.changeDbName)
+        entry.addEntry(
+            self.labels[self.DB_NAME],
+            default=self.values[self.DB_NAME],
+            func=self.changeDbName)
 
         # フォントサイズ設定項目
         font_sizes = [str(i) for i in range(40)]
-        entry.addCombo(self.labels[self.FONT_SIZE],
-                       font_sizes,
-                       current_index=self.values[self.FONT_SIZE],
-                       func=self.changefontSize)
+        entry.addCombo(
+            self.labels[self.FONT_SIZE],
+            font_sizes,
+            current_index=self.values[self.FONT_SIZE],
+            func=self.changefontSize)
 
         # 履歴表示数設定項目
-        self.history_nums = [str(i) for i in range(201) if i % 5 == 0 and i != 0]
+        self.history_nums = [
+            str(i) for i in range(201) if i % 5 == 0 and i != 0
+        ]
         his_num = self.history_nums.index(str(self.values[self.HISTORY_NUM]))
-        entry.addCombo(self.labels[self.HISTORY_NUM],
-                       self.history_nums,
-                       current_index=his_num,
-
-                       func=self.changeHistoryNum)
+        entry.addCombo(
+            self.labels[self.HISTORY_NUM],
+            self.history_nums,
+            current_index=his_num,
+            func=self.changeHistoryNum)
 
         layout.addWidget(entry)
 
@@ -144,11 +145,16 @@ class SettingEntryPanel(QFrame):
         self.callBack()
 
     def getSettings(self):
-        settings = [
-            {'label': self.labels[self.DB_NAME], 'value': self.getDBName()},
-            {'label': self.labels[self.FONT_SIZE], 'value': self.getFontSize()},
-            {'label': self.labels[self.HISTORY_NUM], 'value': self.getHistoryNum()}
-        ]
+        settings = [{
+            'label': self.labels[self.DB_NAME],
+            'value': self.getDBName()
+        }, {
+            'label': self.labels[self.FONT_SIZE],
+            'value': self.getFontSize()
+        }, {
+            'label': self.labels[self.HISTORY_NUM],
+            'value': self.getHistoryNum()
+        }]
         return settings
 
     # 設定取得
@@ -160,6 +166,11 @@ class SettingEntryPanel(QFrame):
 
     def getHistoryNum(self):
         return self.values[self.HISTORY_NUM]
+
+
+
+
+
 
 
 # 設定エントリ生成クラス
@@ -193,7 +204,7 @@ class SettingList(QFrame):
 
         cb = QComboBox()
         cb.addItems(items)
-        cb.setStyleSheet("QComboBox { combobox-popup: 0; }");
+        cb.setStyleSheet("QComboBox { combobox-popup: 0; }")
         cb.setMaxVisibleItems(10)
         cb.setCurrentIndex(current_index)
         if not func is None:
